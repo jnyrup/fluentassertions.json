@@ -6,10 +6,8 @@ using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
-using Nuke.Common.Tools.NuGet;
 using Nuke.Common.Tools.Xunit;
 using Nuke.Common.Utilities.Collections;
-using static Nuke.Common.Tools.Xunit.XunitTasks;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
@@ -24,7 +22,7 @@ class Build : NukeBuild
     ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
     ///   - Microsoft VSCode           https://nuke.build/vscode
 
-    public static int Main () => Execute<Build>(x => x.Pack);
+    public static int Main() => Execute<Build>(x => x.Pack);
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
@@ -73,17 +71,19 @@ class Build : NukeBuild
             DotNetTest(s => s
                 .SetProjectFile(Solution.GetProject("FluentAssertions.Json.Specs"))
                 .SetConfiguration(Configuration.Debug)
-                .CombineWith(cc => 
-                    cc.SetFramework("net47"),
-                    cc => cc.SetFramework("netcoreapp3.0")));        });
-    
+                .CombineWith(
+                    cc => cc.SetFramework("net47"),
+                    cc => cc.SetFramework("netcoreapp3.0")));
+        });
+
     Target Pack => _ => _
         .DependsOn(UnitTests)
         .Executes(() =>
         {
-            NuGetTasks.NuGetPack(s => s
-                .SetTargetPath(SourceDirectory / "fluentassertions.nuspec")
+            DotNetPack(s => s
+                .SetProject(Solution.GetProject("FluentAssertions.Json"))
                 .SetOutputDirectory(ArtifactsDirectory)
+                .SetConfiguration(Configuration.Release)
                 .SetVersion(GitVersion.NuGetVersionV2));
         });
 }
